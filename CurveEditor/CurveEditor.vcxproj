@@ -185,23 +185,6 @@ xcopy $(SolutionDir)..\ThirdParty\platforms\*.* $(OutDir)platforms\  /s /d</Comm
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CustomBuild Include="CMainWindow.h">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QT_5_4_1_OpenGL_MSVC_120_64)\bin\moc.exe "%(FullPath)" -o "$(IntDir)moc/%(Filename).h"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QT_5_4_1_OpenGL_MSVC_120_64)\bin\moc.exe "%(FullPath)" -o "$(IntDir)moc/%(Filename).h"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(QT_5_4_1_OpenGL_MSVC_120_64)\bin\moc.exe "%(FullPath)" -o "$(IntDir)moc/%(Filename).h"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(QT_5_4_1_OpenGL_MSVC_120_64)\bin\moc.exe "%(FullPath)" -o "$(IntDir)moc/%(Filename).h"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compiling %(Filename)%(Extension) using MOC</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)moc/%(Filename).h</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compiling %(Filename)%(Extension) using MOC</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)moc/%(Filename).h</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling %(Filename)%(Extension) using MOC</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)moc/%(Filename).h</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling %(Filename)%(Extension) using MOC</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)moc/%(Filename).h</Outputs>
-    </CustomBuild>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="CMainWindow.cpp" />
     <ClCompile Include="CurveEditor.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>

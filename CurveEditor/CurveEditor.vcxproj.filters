@@ -11,17 +11,11 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="CMainWindow.h">
-      <Filter>Header Files</Filter>
-    </CustomBuild>
     <CustomBuild Include="CurveEditor.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CMainWindow.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

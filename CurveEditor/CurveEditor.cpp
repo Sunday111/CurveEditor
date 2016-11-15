@@ -3,8 +3,6 @@
 #include <QtGui/qpainter.h>
 #include "CurveEditor.h"
 #include "BezierCurve.h"
-#include <sstream>
-#include <Windows.h>
 #include <QtWidgets/qmenu.h>
 
 namespace
@@ -82,33 +80,6 @@ CurveEditor::CurveEditor(
 
 CurveEditor::~CurveEditor() = default;
 
-/*bool CurveEditor::AddPoint(int x, int y)
-{
-	if (x < m_d->min.x || y < m_d->min.y ||
-		x > m_d->max.x || y > m_d->max.y)
-	{
-		return false;
-	}
-
-	for (auto& p : m_d->points)
-	{
-		if (p.x == x)
-		{
-			return false;
-		}
-	}
-
-	m_d->points.emplace_back(x, y);
-
-	std::sort(m_d->points.begin(), m_d->points.end(),
-		[](const Point& p1, const Point& p2)
-	{
-		return p1.x < p2.x;
-	});
-
-	return true;
-}*/
-
 void CurveEditor::paintEvent(QPaintEvent * event)
 {
 	assert(event != nullptr);
@@ -132,11 +103,6 @@ void CurveEditor::paintEvent(QPaintEvent * event)
 	while (++x2 < end.coords[X])
 	{
 		auto _p2 = m_d->curve(x2);
-
-		std::stringstream stream;
-		stream << "X : " << _p2.coords[X] << "; " <<
-			"Y : " << _p2.coords[Y] << std::endl;
-		OutputDebugStringA(stream.str().c_str());
 
 		QPoint nextPoint;
 		UserPointToScreenPoint(_p2.coords[X], _p2.coords[Y], &nextPoint, &cache);
@@ -298,17 +264,7 @@ void CurveEditor::mouseReleaseEvent(QMouseEvent * event)
 	}
 }
 
-void CurveEditor::mouseDoubleClickEvent(QMouseEvent * event)
-{
-	int coords[2];
-	TransformCache cache;
-	ScreenPointToUserPoint(event->pos(), coords, coords + 1, &cache);
-
-	//AddPoint(coords[0], coords[1]);
-	update();
-}
-
-void CurveEditor::CreateTransforCache(TransformCache* cache)
+void CurveEditor::CreateTransformCache(TransformCache* cache)
 {
 	assert(cache != nullptr);
 
@@ -334,7 +290,7 @@ void CurveEditor::ScreenPointToUserPoint(const QPoint& p, int* x, int* y, Transf
 
 	if (!cache->visited)
 	{
-		CreateTransforCache(cache);
+		CreateTransformCache(cache);
 	}
 
 	const float percents[]
@@ -353,7 +309,7 @@ void CurveEditor::UserPointToScreenPoint(int x, int y, QPoint* p, TransformCache
 
 	if (!cache->visited)
 	{
-		CreateTransforCache(cache);
+		CreateTransformCache(cache);
 	}
 
 	const float percents[]
