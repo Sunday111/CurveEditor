@@ -85,24 +85,25 @@ void CurveEditor::paintEvent(QPaintEvent * event)
 	assert(event != nullptr);
 
 	QPainter painter(this);
+	painter.setPen(QPen(QColor(0,0,0), 2,
+		Qt::PenStyle::SolidLine,
+		Qt::PenCapStyle::RoundCap,
+		Qt::PenJoinStyle::RoundJoin));
 	QPoint cursor = mapFromGlobal(QCursor::pos());
 
 	auto r = contentsRect();
 	auto start = m_d->min;
-	auto end = m_d->max;
 
-	int x1 = start.coords[X];
-	int y1 = start.coords[Y];
-
-	int x2 = start.coords[X];
+	const double delta = 0.001;
+	double parameter = 0.0;
 
 	TransformCache cache;
 	QPoint prevPoint;
-	UserPointToScreenPoint(x1, y1, &prevPoint, &cache);
+	UserPointToScreenPoint(start.coords[X], start.coords[Y], &prevPoint, &cache);
 
-	while (++x2 < end.coords[X])
+	while ((parameter += delta) < 1)
 	{
-		auto _p2 = m_d->curve(x2);
+		auto _p2 = m_d->curve(parameter);
 
 		QPoint nextPoint;
 		UserPointToScreenPoint(_p2.coords[X], _p2.coords[Y], &nextPoint, &cache);
@@ -165,11 +166,7 @@ void CurveEditor::mouseMoveEvent(QMouseEvent * event)
 	Impl::Vector* p = nullptr;
 	m_d->curve.GetPoint(m_d->movePtIdx, nullptr, &p);
 
-	if (m_d->movePtIdx == 0 || m_d->movePtIdx == m_d->curve.GetPointsCount() - 1)
-	{
-		p->coords[Y] = y;
-	}
-	else
+	if (m_d->movePtIdx > 0 && m_d->movePtIdx < m_d->curve.GetPointsCount() - 1)
 	{
 		Impl::Vector* prev = nullptr;
 		m_d->curve.GetPoint(m_d->movePtIdx - 1, nullptr, &prev);
@@ -180,9 +177,10 @@ void CurveEditor::mouseMoveEvent(QMouseEvent * event)
 		if (x > prev->coords[X] && x < next->coords[X])
 		{
 			p->coords[X] = x;
-			p->coords[Y] = y;
 		}
 	}
+
+	p->coords[Y] = y;
 
 	update();
 }
@@ -228,8 +226,10 @@ void CurveEditor::mouseReleaseEvent(QMouseEvent * event)
 			{
 				QMenu contextMenu(this);
 
-				QAction insertStrong(tr("Insert strong point"), this);
-				contextMenu.addAction(&insertStrong);
+				QMenu* insertPointMenu = contextMenu.addMenu(tr("Insert point"));
+
+				QAction insertStrong(tr("Strong"), this);
+				insertPointMenu->addAction(&insertStrong);
 
 				TransformCache cache;
 				int userCoords[CurveEditor::Impl::Dimensions];
@@ -242,13 +242,29 @@ void CurveEditor::mouseReleaseEvent(QMouseEvent * event)
 					m_d->curve.InsertPoint(p, false);
 				});
 
-				QAction insertWeak(tr("Insert weak point"), this);
-				contextMenu.addAction(&insertWeak);
+				QAction insertWeak(tr("Weak"), this);
+				insertPointMenu->addAction(&insertWeak);
 
 				QObject::connect(&insertWeak, &QAction::triggered, [this, &p]()
 				{
 					m_d->curve.InsertPoint(p, true);
 				});
+
+				QAction removePoint(tr("Remove"), this);
+
+				bool isWeak;
+				size_t pointIndex;
+				size_t segmentIndex;
+				if (m_d->curve.GetPointInfo(p, 3.0, &segmentIndex, &isWeak, &pointIndex))
+				{
+					QObject::connect(&removePoint, &QAction::triggered, [this, &p]()
+					{
+						assert(false);
+					});
+
+					// The cursor is over the point
+					contextMenu.addAction(&removePoint);
+				}
 
 				contextMenu.exec(mapToGlobal(event->pos()));
 

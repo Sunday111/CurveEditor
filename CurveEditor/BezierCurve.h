@@ -253,11 +253,46 @@ public:
 		return false;
 	}
 
+	int FindPoint(const Vector& p, const T& tol, bool* isWeak) const
+	{
+		assert(startPoint != nullptr && m_endPoint != nullptr);
+
+		const size_t pointsCount = PointsCount();
+
+		size_t resIdx = 0;
+		T minDist = std::numeric_limits<T>::max();
+
+		for (size_t pointIndex = 0; pointIndex < pointsCount; ++pointIndex)
+		{
+			const T dist = (*this)[pointIndex].DistanceTo(p);
+			if (dist < minDist)
+			{
+				minDist = dist;
+				resIdx = pointIndex;
+			}
+		}
+
+		const Vector& resPt = (*this)[resIdx];
+
+		for (int coordIdx = 0; coordIdx < dimensions; ++coordIdx)
+		{
+			if (std::abs(resPt.coords[coordIdx] - p.coords[coordIdx]) > tol)
+			{
+				return -1;
+			}
+		}
+
+		if (isWeak != nullptr)
+		{
+			*isWeak = resIdx > 0 && resIdx < m_order;
+		}
+
+		return static_cast<int>(resIdx);
+	}
+
 	BezierPoints SplitInPoint(const Vector& p)
 	{
-		BezierPoints retVal;
-		retVal.startPoint = startPoint;
-		*retVal.m_endPoint = p;
+		BezierPoints retVal(startPoint, p, 1);
 		startPoint = retVal.m_endPoint.get();
 
 		size_t pointIndex = 0;
@@ -290,6 +325,10 @@ protected:
 	size_t m_order;
 	Vector* startPoint;
 	std::vector<Vector> m_points;
+
+	/* This point is allocated in heap becuse is can be referenced 
+	 * by next segment so its address must not be changed
+	 */
 	std::unique_ptr<Vector> m_endPoint;
 };
 
@@ -420,6 +459,7 @@ public:
 	
 		return false;
 	}
+
 	bool GetPoint(size_t index, bool* isWeak, Vector** p)
 	{
 		const BezierCurve* c = this;
@@ -459,20 +499,58 @@ public:
 		return false;
 	}
 
-	Vector operator()(const T& coord) const
+	Vector operator()(const T& curveParameter) const
 	{
+		const T& sx = RStartPoint().coords[0];
+		const T coord = sx + (REndPoint().coords[0] - sx) * curveParameter;
+
 		for (auto& seg : m_segments)
 		{
-			const T t = seg.GetPoints().GetParameter(coord);
+			const T segmentParameter = seg.GetPoints().GetParameter(coord);
 
-			if (t >= 0)
+			if (segmentParameter >= 0)
 			{
-				return seg(t);
+				return seg(segmentParameter);
 			}
 		}
 
 		assert(false);
 		return Vector();
+	}
+
+	bool GetPointInfo(const Vector& p, const T& tol,
+		size_t* segmentIndex = nullptr,
+		bool* isWeak = nullptr,
+		size_t* indexInSegment = nullptr) const
+	{
+		for(size_t segIdx = 0; segIdx < m_segments.size(); ++segIdx)
+		{
+			const Segment& segment = m_segments[segIdx];
+
+			const int fnd = segment.RPoints().FindPoint(p, tol, isWeak);
+
+			if (fnd != -1)
+			{
+				if (segmentIndex != nullptr)
+				{
+					*segmentIndex = segIdx;
+				}
+
+				if (indexInSegment != nullptr)
+				{
+					*indexInSegment = fnd;
+				}
+
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	bool RemovePoint(size_t index) const
+	{
+		return true;
 	}
 
 private:

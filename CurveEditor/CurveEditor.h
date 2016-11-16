@@ -15,7 +15,6 @@ public:
 		QWidget* parent = nullptr);
 	~CurveEditor();
 
-	//bool AddPoint(int x, int y);
 	void paintEvent(QPaintEvent *) override;
 	void mouseMoveEvent(QMouseEvent *) override;
 	void mousePressEvent(QMouseEvent *) override;
