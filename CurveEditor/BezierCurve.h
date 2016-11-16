@@ -521,8 +521,11 @@ public:
 	bool GetPointInfo(const Vector& p, const T& tol,
 		size_t* segmentIndex = nullptr,
 		bool* isWeak = nullptr,
-		size_t* indexInSegment = nullptr) const
+		size_t* indexInSegment = nullptr,
+        size_t* indexInCurve = nullptr) const
 	{
+        size_t prevIndices = 0;
+
 		for(size_t segIdx = 0; segIdx < m_segments.size(); ++segIdx)
 		{
 			const Segment& segment = m_segments[segIdx];
@@ -541,8 +544,15 @@ public:
 					*indexInSegment = fnd;
 				}
 
+                if(indexInCurve != nullptr)
+                {
+                    *indexInCurve = prevIndices + fnd;
+                }
+
 				return true;
 			}
+
+            prevIndices += segment.RPoints().PointsCount();
 		}
 
 		return false;

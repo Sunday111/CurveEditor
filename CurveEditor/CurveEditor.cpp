@@ -253,13 +253,13 @@ void CurveEditor::mouseReleaseEvent(QMouseEvent * event)
 				QAction removePoint(tr("Remove"), this);
 
 				bool isWeak;
-				size_t pointIndex;
+				size_t indexInCurve;
 				size_t segmentIndex;
-				if (m_d->curve.GetPointInfo(p, 3.0, &segmentIndex, &isWeak, &pointIndex))
+				if (m_d->curve.GetPointInfo(p, 3.0, &segmentIndex, &isWeak, nullptr, &indexInCurve))
 				{
-					QObject::connect(&removePoint, &QAction::triggered, [this, &p]()
+					QObject::connect(&removePoint, &QAction::triggered, [this, indexInCurve]()
 					{
-						assert(false);
+						m_d->curve.RemovePoint(indexInCurve);
 					});
 
 					// The cursor is over the point
