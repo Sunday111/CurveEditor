@@ -44,7 +44,8 @@ public:
 		highlightBrush(QBrush(QColor(0, 255, 0))),
 		moveBrush(QBrush(QColor(255, 255, 0))),
 		weakControlPoint(QBrush(QColor(255, 255, 0))),
-		strongControlPoint(QBrush(QColor(255, 0, 0))),
+		strongNormalControlPoint(QBrush(QColor(255, 0, 0))),
+		strongSmoothControlPoint(QBrush(QColor(0, 0, 255))),
 		curve(
 			Vector({ minX, minY }),
 			Vector({ maxX, maxY }),
@@ -52,6 +53,19 @@ public:
 		min(Vector({ minX, minY })),
 		max(Vector({ maxX, maxY }))
 	{}
+
+	const QBrush& GetBrush(BezierCurvePointType pointType) const
+	{
+		switch (pointType)
+		{
+		case BezierCurvePointType::Strong_Normal: return strongNormalControlPoint;
+		case BezierCurvePointType::Strong_Smooth: return strongSmoothControlPoint;
+		case BezierCurvePointType::Weak:          return weakControlPoint;
+		}
+
+		assert(false);
+		return normalBrush;
+	}
 
 	int movePtIdx;
 	Curve curve;
@@ -64,7 +78,8 @@ public:
 	QBrush highlightBrush;
 
 	QBrush weakControlPoint;
-	QBrush strongControlPoint;
+	QBrush strongNormalControlPoint;
+	QBrush strongSmoothControlPoint;
 };
 
 CurveEditor::CurveEditor(
@@ -133,11 +148,11 @@ void CurveEditor::paintEvent(QPaintEvent * event)
 	for (size_t i = 0; i < pointsCount; ++i)
 	{
 
-		Impl::Curve::Vector* point;
-		bool weak;
-		m_d->curve.GetPoint(i, &weak, &point);
+		const Impl::Curve::Vector* point;
+		BezierCurvePointType pointType;
+		m_d->curve.GetPointInfo(i, &point, &pointType);
 
-		painter.setBrush(weak ? m_d->weakControlPoint : m_d->strongControlPoint);
+		painter.setBrush(m_d->GetBrush(pointType));
 
 		QPoint p;
 		covnertPoint(p, *point);
@@ -227,44 +242,50 @@ void CurveEditor::mouseReleaseEvent(QMouseEvent * event)
 				QMenu contextMenu(this);
 
 				QMenu* insertPointMenu = contextMenu.addMenu(tr("Insert point"));
+				QMenu* insertStrongPointMenu = insertPointMenu->addMenu(tr("Strong"));
 
-				QAction insertStrong(tr("Strong"), this);
-				insertPointMenu->addAction(&insertStrong);
+				QAction insertStrongNormalPoint(tr("Normal"), this);
+				QAction insertStrongSmoothPoint(tr("Smooth"), this);
+				QAction insertWeak(tr("Weak"), this);
+				QAction removePoint(tr("Remove"), this);
+
+				insertStrongPointMenu->addAction(&insertStrongNormalPoint);
+				insertStrongPointMenu->addAction(&insertStrongSmoothPoint);
+				insertPointMenu->addAction(&insertWeak);
 
 				TransformCache cache;
 				int userCoords[CurveEditor::Impl::Dimensions];
 				ScreenPointToUserPoint(event->pos(), userCoords, userCoords + 1, &cache);
-
 				const Impl::Curve::Vector p({ double(userCoords[X]), double(userCoords[Y]) });
 
-				QObject::connect(&insertStrong, &QAction::triggered, [this, &p]()
+				QObject::connect(&insertStrongNormalPoint, &QAction::triggered, [this, &p]()
 				{
-					m_d->curve.InsertPoint(p, false);
+					m_d->curve.InsertPoint<BezierCurvePointType::Strong_Normal>(p);
 				});
 
-				QAction insertWeak(tr("Weak"), this);
-				insertPointMenu->addAction(&insertWeak);
+				QObject::connect(&insertStrongSmoothPoint, &QAction::triggered, [this, &p]()
+				{
+					m_d->curve.InsertPoint<BezierCurvePointType::Strong_Smooth>(p);
+				});
 
 				QObject::connect(&insertWeak, &QAction::triggered, [this, &p]()
 				{
-					m_d->curve.InsertPoint(p, true);
+					m_d->curve.InsertPoint<BezierCurvePointType::Weak>(p);
 				});
 
-				QAction removePoint(tr("Remove"), this);
-
-				bool isWeak;
 				size_t indexInCurve;
-				size_t segmentIndex;
+				BezierCurvePointType pointType;
 				/* The cursor is over the point and it is not first or last strong point */
-				if (m_d->curve.GetPointInfo(p, 3.0, &segmentIndex, &isWeak, nullptr, &indexInCurve) &&
-					indexInCurve == 0 || indexInCurve == m_d->curve.GetPointsCount() - 1)
+				if (m_d->curve.GetPointInfo(p, 3.0, nullptr, &pointType, nullptr, &indexInCurve) &&
+					indexInCurve > 0 || indexInCurve < m_d->curve.GetPointsCount() - 1)
 				{
+					QMenu* editPointMenu = contextMenu.addMenu(tr("Edit point"));
+					editPointMenu->addAction(&removePoint);
+
 					QObject::connect(&removePoint, &QAction::triggered, [this, indexInCurve]()
 					{
 						m_d->curve.RemovePoint(indexInCurve);
 					});
-
-					contextMenu.addAction(&removePoint);
 				}
 
 				contextMenu.exec(mapToGlobal(event->pos()));
