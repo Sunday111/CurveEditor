@@ -255,14 +255,15 @@ void CurveEditor::mouseReleaseEvent(QMouseEvent * event)
 				bool isWeak;
 				size_t indexInCurve;
 				size_t segmentIndex;
-				if (m_d->curve.GetPointInfo(p, 3.0, &segmentIndex, &isWeak, nullptr, &indexInCurve))
+				/* The cursor is over the point and it is not first or last strong point */
+				if (m_d->curve.GetPointInfo(p, 3.0, &segmentIndex, &isWeak, nullptr, &indexInCurve) &&
+					indexInCurve == 0 || indexInCurve == m_d->curve.GetPointsCount() - 1)
 				{
 					QObject::connect(&removePoint, &QAction::triggered, [this, indexInCurve]()
 					{
 						m_d->curve.RemovePoint(indexInCurve);
 					});
 
-					// The cursor is over the point
 					contextMenu.addAction(&removePoint);
 				}
 

@@ -317,6 +317,58 @@ public:
 		return retVal;
 	}
 
+	bool RemoveWeakPoint(size_t index)
+	{
+		if (index == 0 || index == m_order)
+		{
+			return false;
+		}
+
+		--m_order;
+		m_points.erase(m_points.begin() + index - 1);
+
+		return true;
+	}
+
+	bool Merge(BezierPoints& points)
+	{
+		// Merge with previous segment
+		if (points.m_endPoint.get() == startPoint)
+		{
+			startPoint = points.startPoint;
+
+			points.m_points.reserve(points.m_points.size() + m_points.size());
+
+			for (auto iPoint = m_points.rbegin();
+				iPoint != m_points.rend(); ++iPoint)
+			{
+				points.m_points.push_back(*iPoint);
+			}
+
+			m_points = std::move(points.m_points);
+
+			m_order = 1 + m_points.size();
+
+			return true;
+		}
+		// Merge with next segment
+		else if (m_endPoint.get() == points.startPoint)
+		{
+			m_endPoint = std::move(points.m_endPoint);
+			m_points.insert(m_points.end(),
+				points.m_points.begin(), points.m_points.end());
+
+			m_order = 1 + m_points.size();
+
+			return true;
+		}
+		// Bad segment
+		else
+		{
+			return false;
+		}
+	}
+
 protected:
 	BezierPoints() :
 		m_endPoint(std::make_unique<Vector>())
@@ -558,9 +610,63 @@ public:
 		return false;
 	}
 
-	bool RemovePoint(size_t index) const
+	bool RemovePoint(size_t index)
 	{
-		return true;
+		const size_t segmentsCount = m_segments.size();
+
+		for (size_t segmentIndex = 0; segmentIndex < segmentsCount; ++segmentIndex)
+		{
+			Segment& segment = m_segments[segmentIndex];
+			Segment::Points& segmentPoints = segment.RPoints();
+			const size_t segmentPointsCount = segmentPoints.PointsCount();
+
+			if (index < segmentPointsCount)
+			{
+				bool pointRemoved;
+
+				if (index == 0)
+				{
+					if (segmentIndex == 0)
+					{
+						pointRemoved = false;
+					}
+					else
+					{
+						const size_t mergeSegmentIndex = segmentIndex - 1;
+						pointRemoved = segmentPoints.Merge(m_segments[segmentIndex - 1].RPoints());
+						m_segments.erase(m_segments.begin() + mergeSegmentIndex);
+					}
+				}
+				else if (index == segmentPointsCount - 1)
+				{
+					if (segmentIndex == segmentsCount - 1)
+					{
+						pointRemoved = false;
+					}
+					else
+					{
+						const size_t mergeSegmentIndex = segmentIndex + 1;
+						pointRemoved = segmentPoints.Merge(m_segments[segmentIndex + 1].RPoints());
+						m_segments.erase(m_segments.begin() + mergeSegmentIndex);
+					}
+				}
+				else
+				{
+					pointRemoved = segmentPoints.RemoveWeakPoint(index);
+				}
+
+				if (pointRemoved)
+				{
+					--m_pointsCount;
+				}
+
+				return pointRemoved;
+			}
+			
+			index -= segmentPointsCount;
+		}
+
+		return false;
 	}
 
 private:
