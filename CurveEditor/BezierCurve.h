@@ -176,9 +176,14 @@ public:
     using Vector = Vector<T, dimensions>;
     using StrongPoint = BezierStrongPoint<T, dimensions>;
 
-    explicit BezierPoints(StrongPoint* sp, const Vector& ep, size_t order, BezierCurveStrongPointType pointType) :
-        startPoint(sp),
-        m_endPoint(std::make_unique<StrongPoint>(ep.coords, pointType)),
+    /* Strong point can be referenced by another segment */
+    using StrongPointPtr = std::shared_ptr<StrongPoint>;
+
+    explicit BezierPoints(
+            const StrongPointPtr& sp, const Vector& ep,
+            size_t order, BezierCurveStrongPointType pointType) :
+        m_startPoint(sp),
+        m_endPoint(std::make_shared<StrongPoint>(ep.coords, pointType)),
         m_order(order)
     {
         assert(sp != nullptr);
@@ -202,12 +207,10 @@ public:
     BezierPoints(const BezierPoints&) = delete;
     BezierPoints(BezierPoints&& uref) :
         m_order(uref.m_order),
-        startPoint(uref.startPoint),
+        m_startPoint(std::move(uref.m_startPoint)),
         m_points(std::move(uref.m_points)),
         m_endPoint(std::move(uref.m_endPoint))
-    {
-        uref.startPoint = nullptr;
-    }
+    {}
 
     const size_t PointsCount() const { return m_order + 1; }
     const size_t InnerPoints() const { return m_order - 1; }
@@ -217,7 +220,7 @@ public:
     {
         const T range[]
         {
-            startPoint->coords[0],
+            m_startPoint->coords[0],
             m_endPoint->coords[0]
         };
 
@@ -229,10 +232,10 @@ public:
         return (coord - range[0]) / (range[1] - range[0]);
     }
 
-    StrongPoint& FirstPoint() { return *startPoint; }
-    const StrongPoint& FirstPoint() const { return *startPoint; }
-    StrongPoint& LastPoint() { return *m_endPoint; }
-    const StrongPoint& LastPoint() const { return *m_endPoint; }
+    StrongPointPtr& RFirstPoint() { return m_startPoint; }
+    const StrongPointPtr& RFirstPoint() const { return m_startPoint; }
+    StrongPointPtr& RLastPoint() { return m_endPoint; }
+    const StrongPointPtr& RLastPoint() const { return m_endPoint; }
 
     Vector& operator[](size_t idx)
     {
@@ -241,7 +244,7 @@ public:
 
         if (idx == 0)
         {
-            return *startPoint;
+            return *m_startPoint;
         }
 
         if (idx == pointsCount - 1)
@@ -261,9 +264,8 @@ public:
 
     BezierPoints& operator=(BezierPoints&& uref)
     {
-
         m_order = uref.m_order;
-        startPoint = uref.startPoint;
+        m_startPoint = std::move(uref.m_startPoint);
         m_points = std::move(uref.m_points);
         m_endPoint = std::move(uref.m_endPoint);
 
@@ -296,7 +298,7 @@ public:
 
     int FindPoint(const Vector& p, const T& tol, BezierCurvePointType* pointType = nullptr) const
     {
-        assert(startPoint != nullptr && m_endPoint != nullptr);
+        assert(m_startPoint != nullptr && m_endPoint != nullptr);
 
         const size_t pointsCount = PointsCount();
 
@@ -327,7 +329,7 @@ public:
         {
             if (resIdx == 0)
             {
-                *pointType = static_cast<BezierCurvePointType>(startPoint->GetPointType());
+                *pointType = static_cast<BezierCurvePointType>(m_startPoint->GetPointType());
             }
             else if (resIdx == m_order)
             {
@@ -344,8 +346,8 @@ public:
 
     BezierPoints SplitInPoint(const Vector& p, BezierCurveStrongPointType pointType)
     {
-        BezierPoints retVal(startPoint, p, 1, pointType);
-        startPoint = retVal.m_endPoint.get();
+        BezierPoints retVal(m_startPoint, p, 1, pointType);
+        m_startPoint = retVal.m_endPoint;
 
         size_t pointIndex = 0;
 
@@ -385,9 +387,9 @@ public:
     bool Merge(BezierPoints& points)
     {
         // Merge with previous segment
-        if (points.m_endPoint.get() == startPoint)
+        if (points.m_endPoint == m_startPoint)
         {
-            startPoint = points.startPoint;
+            m_startPoint = points.m_startPoint;
 
             points.m_points.reserve(points.m_points.size() + m_points.size());
 
@@ -404,7 +406,7 @@ public:
             return true;
         }
         // Merge with next segment
-        else if (m_endPoint.get() == points.startPoint)
+        else if (m_endPoint == points.m_startPoint)
         {
             m_endPoint = std::move(points.m_endPoint);
             m_points.insert(m_points.end(),
@@ -427,13 +429,9 @@ protected:
     {}
 
     size_t m_order;
-    StrongPoint* startPoint;
+    StrongPointPtr m_startPoint;
+    StrongPointPtr m_endPoint;
     std::vector<Vector> m_points;
-
-    /* This point is allocated in heap becuse is can be referenced 
-     * by next segment so its address must not be changed
-     */
-    std::unique_ptr<StrongPoint> m_endPoint;
 };
 
 /* Where n is Bezier curve order */
@@ -443,9 +441,10 @@ class BezierSegment
 public:
     using Points = BezierPoints<T, dimensions>;
     using Vector = typename Points::Vector;
-    using StrongPoint = BezierStrongPoint<T, dimensions>;
+    using StrongPoint = typename Points::StrongPoint;
+    using StrongPointPtr = typename Points::StrongPointPtr;
 
-    explicit BezierSegment(StrongPoint* start, const Vector& end, size_t order, BezierCurveStrongPointType endPointType) :
+    explicit BezierSegment(const std::shared_ptr<StrongPoint>& start, const Vector& end, size_t order, BezierCurveStrongPointType endPointType) :
         m_points(start, end, order, endPointType)
     {}
     BezierSegment(const BezierSegment&) = delete;
@@ -455,7 +454,6 @@ public:
 
     Points& RPoints() { return m_points; }
     const Points& RPoints() const { return m_points; }
-    const Points& GetPoints() const { return m_points; }
 
     BezierSegment SplitInPoint(const Vector& p, BezierCurveStrongPointType pointType)
     {
@@ -500,34 +498,40 @@ class BezierCurve
 public:
     using Segment = BezierSegment<T, dimensions>;
     using Vector = typename Segment::Vector;
-    using StrongPoint = BezierStrongPoint<T, dimensions>;
+    using StrongPoint = typename Segment::StrongPoint;
+    using StrongPointPtr = typename Segment::StrongPointPtr;
 
     /* n is order of first bezier curve segment */
     explicit BezierCurve(const Vector& startPoint, const Vector& endPoint, size_t n) :
-        m_startPoint(startPoint.coords, BezierCurveStrongPointType::Normal),
         m_pointsCount(n + 1)
     {
         //Segment initSegment(&m_startPoint, endPoint, n);
         //m_segments.push_back(initSegment);
         auto dir = endPoint - startPoint;
 
-        Segment initSegment_0(&m_startPoint, startPoint + dir * 0.5, n, BezierCurveStrongPointType::Normal);
-        Segment initSegment_1(&initSegment_0.RPoints().LastPoint(), endPoint, n, BezierCurveStrongPointType::Normal);
+        Segment initSegment_0(std::make_shared<StrongPoint>(startPoint.coords, BezierCurveStrongPointType::Normal), startPoint + dir * 0.5, n, BezierCurveStrongPointType::Normal);
+        Segment initSegment_1(initSegment_0.RPoints().RLastPoint(), endPoint, n, BezierCurveStrongPointType::Normal);
         m_segments.push_back(std::move(initSegment_0));
         m_segments.push_back(std::move(initSegment_1));
 
         m_pointsCount = 7;
     }
 
-    Vector& RStartPoint() { return m_startPoint; }
-    const Vector& RStartPoint() const { return m_startPoint; }
-    void SetStartPoint(const Vector& val) { m_startPoint = val; }
-    const Vector& GetStartPoint() const { return m_startPoint; }
+    StrongPointPtr& RFirstPoint()
+    {
+        assert(!m_segments.empty());
+        return m_segments.front().RPoints().RFirstPoint();
+    }
 
-    Vector& REndPoint() { return m_segments.back().RPoints().LastPoint(); }
-    const Vector& REndPoint() const { return m_segments.back().RPoints().LastPoint(); }
-    void SetEndPoint(const Vector& val) { m_endPoint = val; }
-    const Vector& GetEndPoint() const { return m_endPoint; }
+    const StrongPointPtr& RFirstPoint() const
+    {
+        assert(!m_segments.empty());
+        return m_segments.front().RPoints().RFirstPoint();
+    }
+
+    StrongPointPtr& RLastPoint() { return m_segments.back().RPoints().RLastPoint(); }
+    const StrongPointPtr& RLastPoint() const { return m_segments.back().RPoints().RLastPoint(); }
+    const StrongPointPtr& GetEndPoint() const { return m_endPoint; }
 
     const std::vector<Segment>& GetSegments() const { return m_segments; }
     size_t GetPointsCount() const { return m_pointsCount; }
@@ -575,8 +579,8 @@ public:
     template<BezierCurvePointType pointType>
     bool InsertPoint(const Vector& p)
     {
-        if (p.coords[0] < RStartPoint().coords[0] ||
-            p.coords[0] > REndPoint().coords[0])
+        if (p.coords[0] < RFirstPoint()->coords[0] ||
+            p.coords[0] > RLastPoint()->coords[0])
         {
             return false;
         }
@@ -611,12 +615,12 @@ public:
 
     Vector operator()(const T& curveParameter) const
     {
-        const T& sx = RStartPoint().coords[0];
-        const T coord = sx + (REndPoint().coords[0] - sx) * curveParameter;
+        const T& sx = RFirstPoint()->coords[0];
+        const T coord = sx + (RLastPoint()->coords[0] - sx) * curveParameter;
 
         for (auto& seg : m_segments)
         {
-            const T segmentParameter = seg.GetPoints().GetParameter(coord);
+            const T segmentParameter = seg.RPoints().GetParameter(coord);
 
             if (segmentParameter >= 0)
             {
@@ -657,11 +661,11 @@ public:
                 {
                     if (pointIndex == 0)
                     {
-                        *pointType = static_cast<BezierCurvePointType>(points.FirstPoint().GetPointType());
+                        *pointType = static_cast<BezierCurvePointType>(points.RFirstPoint()->GetPointType());
                     }
                     else if(pointIndex == pointsCount - 1)
                     {
-                        *pointType = static_cast<BezierCurvePointType>(points.LastPoint().GetPointType());
+                        *pointType = static_cast<BezierCurvePointType>(points.RLastPoint()->GetPointType());
                     }
                     else
                     {
@@ -677,7 +681,7 @@ public:
                 return true;
             }
 
-            pointIndex -= pointsCount;
+            pointIndex -= pointsCount - 1;
         }
 
         return false;
@@ -784,7 +788,6 @@ public:
 
 private:
 
-    StrongPoint m_startPoint;
     size_t m_pointsCount;
     std::vector<Segment> m_segments;
 };

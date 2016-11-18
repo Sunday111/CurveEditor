@@ -142,12 +142,11 @@ void CurveEditor::paintEvent(QPaintEvent * event)
     };
 
     QPoint prevPt;
-    covnertPoint(prevPt, m_d->curve.GetStartPoint());
+    covnertPoint(prevPt, *m_d->curve.RFirstPoint());
 
     painter.setPen(QColor(127, 127, 127));
     for (size_t i = 0; i < pointsCount; ++i)
     {
-
         const Impl::Curve::Vector* point;
         BezierCurvePointType pointType;
         m_d->curve.GetPointInfo(i, &point, &pointType);
