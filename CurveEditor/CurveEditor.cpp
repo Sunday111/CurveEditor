@@ -80,6 +80,14 @@ public:
     QBrush weakControlPoint;
     QBrush strongNormalControlPoint;
     QBrush strongSmoothControlPoint;
+
+    struct DrawPointsContext
+    {
+        CurveEditor* _this;
+        TransformCache cache;
+        QPainter* painter;
+        QPoint prevPoint;
+    };
 };
 
 CurveEditor::CurveEditor(
@@ -104,66 +112,69 @@ void CurveEditor::paintEvent(QPaintEvent * event)
         Qt::PenStyle::SolidLine,
         Qt::PenCapStyle::RoundCap,
         Qt::PenJoinStyle::RoundJoin));
-    QPoint cursor = mapFromGlobal(QCursor::pos());
 
-    auto r = contentsRect();
     auto start = m_d->min;
 
     const double delta = 0.001;
     double parameter = 0.0;
 
-    TransformCache cache;
-    QPoint prevPoint;
-    UserPointToScreenPoint(start.coords[X], start.coords[Y], &prevPoint, &cache);
+    //Prepare drawing context
+    Impl::DrawPointsContext drawContext;
+    drawContext.painter = &painter;
+    drawContext._this = this;
 
+    UserPointToScreenPoint(start.coords[X], start.coords[Y], &drawContext.prevPoint, &drawContext.cache);
+
+    /* Draw approximated curve */
     while ((parameter += delta) < 1)
     {
         auto _p2 = m_d->curve(parameter);
 
         QPoint nextPoint;
-        UserPointToScreenPoint(_p2.coords[X], _p2.coords[Y], &nextPoint, &cache);
+        UserPointToScreenPoint(_p2.coords[X], _p2.coords[Y], &nextPoint, &drawContext.cache);
 
-        painter.drawLine(prevPoint, nextPoint);
+        painter.drawLine(drawContext.prevPoint, nextPoint);
 
-        prevPoint = nextPoint;
+        drawContext.prevPoint = nextPoint;
     }
 
-    auto drawPoint = [&painter](const QPoint& p)
-    {
-        painter.drawEllipse(p, 5, 5);
-    };
-
-    const size_t pointsCount = m_d->curve.GetPointsCount();
-
-    auto covnertPoint = [this, &cache]
-        (QPoint& res, const Impl::Curve::Vector& p)
-    {
-        UserPointToScreenPoint(p.coords[X], p.coords[Y], &res, &cache);
-    };
-
-    QPoint prevPt;
-    covnertPoint(prevPt, *m_d->curve.RFirstPoint());
-
+    /* Draw lines between control points */
     painter.setPen(QColor(127, 127, 127));
-    for (size_t i = 0; i < pointsCount; ++i)
+    m_d->curve.WalkThroughThePoints(
+        [](size_t /*indexInSegment*/, size_t indexInCurve, const Impl::Curve::Segment* /*segment*/,
+            BezierCurvePointType /*pointType*/, const Impl::Vector* point, void* userContext)
     {
-        const Impl::Curve::Vector* point;
-        BezierCurvePointType pointType;
-        m_d->curve.GetPointInfo(i, &point, &pointType);
-
-        painter.setBrush(m_d->GetBrush(pointType));
-
-        QPoint p;
-        covnertPoint(p, *point);
-        
-        painter.drawEllipse(p, 5, 5);
-
-        if (i != 0)
+        Impl::DrawPointsContext* context = reinterpret_cast<Impl::DrawPointsContext*>(userContext);
+    
+        if (indexInCurve == 0)
         {
-            painter.drawLine(prevPt, p);
-            prevPt = p;
+            context->_this->UserPointToScreenPoint(point->coords[X], point->coords[Y], &context->prevPoint, &context->cache);
         }
-    }
+        else
+        {
+            QPoint p;
+            context->_this->UserPointToScreenPoint(point->coords[X], point->coords[Y], &p, &context->cache);
+            context->painter->drawLine(context->prevPoint, p);
+            context->prevPoint = p;
+        }
+    
+        return false;
+    }, &drawContext);
+
+    /* Draw control points */
+    m_d->curve.WalkThroughThePoints(
+        [](size_t /*indexInSegment*/, size_t /*indexInCurve*/, const Impl::Curve::Segment* /*segment*/,
+            BezierCurvePointType pointType, const Impl::Vector* point, void* userContext)
+    {
+        Impl::DrawPointsContext* context = reinterpret_cast<Impl::DrawPointsContext*>(userContext);
+
+        context->_this->UserPointToScreenPoint(point->coords[X], point->coords[Y], &context->prevPoint, &context->cache);
+        context->painter->setBrush(context->_this->m_d->GetBrush(pointType));
+        context->painter->drawEllipse(context->prevPoint, 5, 5);
+
+        return false;
+    }, &drawContext);
+    
 }
 
 void CurveEditor::mouseMoveEvent(QMouseEvent * event)
