@@ -188,24 +188,7 @@ void CurveEditor::mouseMoveEvent(QMouseEvent * event)
     TransformCache cache;
     ScreenPointToUserPoint(event->pos(), point.coords, &cache);
 
-    Impl::Vector* p = nullptr;
-    m_d->curve.GetPoint(m_d->movePtIdx, nullptr, &p);
-
-    if (m_d->movePtIdx > 0 && m_d->movePtIdx < m_d->curve.GetPointsCount() - 1)
-    {
-        Impl::Vector* prev = nullptr;
-        m_d->curve.GetPoint(m_d->movePtIdx - 1, nullptr, &prev);
-
-        Impl::Vector* next = nullptr;
-        m_d->curve.GetPoint(m_d->movePtIdx + 1, nullptr, &next);
-
-        if (point.coords[X] > prev->coords[X] && point.coords[X] < next->coords[X])
-        {
-            p->coords[X] = point.coords[X];
-        }
-    }
-
-    p->coords[Y] = point.coords[Y];
+    m_d->curve.MovePoint(m_d->movePtIdx, point);
 
     update();
 }

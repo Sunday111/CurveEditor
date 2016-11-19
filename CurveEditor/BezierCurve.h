@@ -866,42 +866,6 @@ public:
         return false;
     }
 
-    //bool MovePoint(size_t pointIndex, const Vector& coords)
-    //{
-    //    enum {Prev, Target, Next, _Last};
-    //
-    //    struct
-    //    {
-    //        Vector* point;
-    //        BezierCurvePointType type;
-    //        size_t segmentIndex;
-    //        size_t indexInSegment;
-    //    } pointsInfo[_Last];
-    //
-    //    // Get information about the target point
-    //    if (!GetPointInfo(
-    //        &pointsInfo[Target].point,
-    //        &pointsInfo[Target].type,
-    //        &pointsInfo[Target].segmentIndex,
-    //        &pointsInfo[Target].indexInSegment))
-    //    {
-    //        //Wrong index ?
-    //        return false;
-    //    }
-    //
-    //    Segment& targetSegment = m_segments[pointsInfo[Target].segmentIndex];
-    //    Segment::Points& targetSegmentPoints = targetSegment.RPoints();
-    //    const size_t targetSegmentPoint
-    //
-    //    // Get information about the previous point
-    //    if (pointsInfo[Target].indexInSegment > 0)
-    //    {
-    //
-    //    }
-    //
-    //    return true;
-    //}
-
 private:
     struct WalkContext
     {
@@ -909,6 +873,17 @@ private:
         const Segment* segment;
         void* userContext;
         WalkThroughThePointsFn userFn;
+    };
+
+    struct MovePointContext
+    {
+        size_t targetPointIndex;
+
+        struct
+        {
+            Vector* point;
+            BezierCurvePointType type;
+        } points[3];
     };
 
     static bool WalkHelper(size_t pointIndex, BezierCurvePointType pointType, const Vector* point, void* context)
@@ -922,6 +897,35 @@ private:
             pointType,
             const_cast<Vector*>(point),
             walkContext->userContext);
+    }
+
+    static bool MovePointHelper(size_t /*indexInSegment*/, size_t indexInCurve, Segment* /*segment*/,
+        BezierCurvePointType pointType, Vector* point, void* _context)
+    {
+        MovePointContext* context = reinterpret_cast<MovePointContext*>(_context);
+
+        int ctxIdx = -1;
+
+        if (context->targetPointIndex == indexInCurve)
+        {
+            ctxIdx = 1;
+        }
+        else if (context->targetPointIndex == indexInCurve + 1)
+        {
+            ctxIdx = 0;
+        }
+        else if (context->targetPointIndex + 1 == indexInCurve)
+        {
+            ctxIdx = 2;
+        }
+
+        if (ctxIdx != -1)
+        {
+            context->points[ctxIdx].point = point;
+            context->points[ctxIdx].type = pointType;
+        }
+
+        return indexInCurve > context->targetPointIndex + 1;
     }
 
 public:
@@ -954,6 +958,35 @@ public:
         }
 
         return false;
+    }
+
+    bool MovePoint(size_t pointIndex, const Vector& coords)
+    {
+        MovePointContext context;
+        std::memset(&context, 0, sizeof(MovePointContext));
+        context.targetPointIndex = pointIndex;
+
+        WalkThroughThePoints(MovePointHelper, &context);
+
+        if (context.points[1].point == nullptr)
+        {
+            return false;
+        }
+
+        const T tol = 3.0;
+
+        if ((context.points[0].point == nullptr || coords.coords[0] > context.points[0].point->coords[0]) &&
+            (context.points[2].point == nullptr || coords.coords[0] < context.points[2].point->coords[0]))
+        {
+            context.points[1].point->coords[0] = coords.coords[0];
+        }
+
+        for (int i = 1; i < dimensions; ++i)
+        {
+            context.points[1].point->coords[i] = coords.coords[i];
+        }
+
+        return true;
     }
 
 private:
