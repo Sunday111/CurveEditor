@@ -37,8 +37,8 @@ public:
     using Vector = Curve::Vector;
 
     explicit Impl(
-        float minX, float maxX,
-        float minY, float maxY) :
+        double minX, double maxX,
+        double minY, double maxY) :
         movePtIdx(-1),
         normalBrush(QBrush(QColor(255, 255, 255))),
         highlightBrush(QBrush(QColor(0, 255, 0))),
@@ -91,8 +91,8 @@ public:
 };
 
 CurveEditor::CurveEditor(
-    int minX, int maxX,
-    int minY, int maxY,
+    double minX, double maxX,
+    double minY, double maxY,
     QWidget* parent) :
     QWidget(parent),
     m_d(std::make_unique<Impl>(
@@ -123,7 +123,7 @@ void CurveEditor::paintEvent(QPaintEvent * event)
     drawContext.painter = &painter;
     drawContext._this = this;
 
-    UserPointToScreenPoint(start.coords[X], start.coords[Y], &drawContext.prevPoint, &drawContext.cache);
+    UserPointToScreenPoint(start.coords, &drawContext.prevPoint, &drawContext.cache);
 
     /* Draw approximated curve */
     while ((parameter += delta) < 1)
@@ -131,7 +131,7 @@ void CurveEditor::paintEvent(QPaintEvent * event)
         auto _p2 = m_d->curve(parameter);
 
         QPoint nextPoint;
-        UserPointToScreenPoint(_p2.coords[X], _p2.coords[Y], &nextPoint, &drawContext.cache);
+        UserPointToScreenPoint(_p2.coords, &nextPoint, &drawContext.cache);
 
         painter.drawLine(drawContext.prevPoint, nextPoint);
 
@@ -148,12 +148,12 @@ void CurveEditor::paintEvent(QPaintEvent * event)
     
         if (indexInCurve == 0)
         {
-            context->_this->UserPointToScreenPoint(point->coords[X], point->coords[Y], &context->prevPoint, &context->cache);
+            context->_this->UserPointToScreenPoint(point->coords, &context->prevPoint, &context->cache);
         }
         else
         {
             QPoint p;
-            context->_this->UserPointToScreenPoint(point->coords[X], point->coords[Y], &p, &context->cache);
+            context->_this->UserPointToScreenPoint(point->coords, &p, &context->cache);
             context->painter->drawLine(context->prevPoint, p);
             context->prevPoint = p;
         }
@@ -168,7 +168,7 @@ void CurveEditor::paintEvent(QPaintEvent * event)
     {
         Impl::DrawPointsContext* context = reinterpret_cast<Impl::DrawPointsContext*>(userContext);
 
-        context->_this->UserPointToScreenPoint(point->coords[X], point->coords[Y], &context->prevPoint, &context->cache);
+        context->_this->UserPointToScreenPoint(point->coords, &context->prevPoint, &context->cache);
         context->painter->setBrush(context->_this->m_d->GetBrush(pointType));
         context->painter->drawEllipse(context->prevPoint, 5, 5);
 
@@ -184,9 +184,9 @@ void CurveEditor::mouseMoveEvent(QMouseEvent * event)
         return;
     }
 
-    int x, y;
+    Impl::Vector point;
     TransformCache cache;
-    ScreenPointToUserPoint(event->pos(), &x, &y, &cache);
+    ScreenPointToUserPoint(event->pos(), point.coords, &cache);
 
     Impl::Vector* p = nullptr;
     m_d->curve.GetPoint(m_d->movePtIdx, nullptr, &p);
@@ -199,13 +199,13 @@ void CurveEditor::mouseMoveEvent(QMouseEvent * event)
         Impl::Vector* next = nullptr;
         m_d->curve.GetPoint(m_d->movePtIdx + 1, nullptr, &next);
 
-        if (x > prev->coords[X] && x < next->coords[X])
+        if (point.coords[X] > prev->coords[X] && point.coords[X] < next->coords[X])
         {
-            p->coords[X] = x;
+            p->coords[X] = point.coords[X];
         }
     }
 
-    p->coords[Y] = y;
+    p->coords[Y] = point.coords[Y];
 
     update();
 }
@@ -219,24 +219,14 @@ void CurveEditor::mousePressEvent(QMouseEvent * event)
 
     assert(m_d->movePtIdx == -1);
 
-    int x, y;
+    Impl::Vector userPoint;
     TransformCache cache;
-    ScreenPointToUserPoint(event->pos(), &x, &y, &cache);
+    ScreenPointToUserPoint(event->pos(), userPoint.coords, &cache);
 
-    const double tol = 7.0;
-
-    const size_t pointsCount = m_d->curve.GetPointsCount();
-    for (size_t pointIndex = 0; pointIndex < pointsCount; ++pointIndex)
+    size_t pointIndex;
+    if (m_d->curve.GetPointInfo(userPoint, 7.0, nullptr, nullptr, nullptr, &pointIndex))
     {
-        Impl::Vector* p;
-        m_d->curve.GetPoint(pointIndex, nullptr, &p);
-
-        if (x > p->coords[X] - tol && x < p->coords[X] + tol &&
-            y > p->coords[Y] - tol && y < p->coords[Y] + tol)
-        {
-            m_d->movePtIdx = static_cast<int>(pointIndex);
-            break;
-        }
+        m_d->movePtIdx = static_cast<int>(pointIndex);
     }
 
     update();
@@ -264,8 +254,8 @@ void CurveEditor::mouseReleaseEvent(QMouseEvent * event)
                 insertPointMenu->addAction(&insertWeak);
 
                 TransformCache cache;
-                int userCoords[CurveEditor::Impl::Dimensions];
-                ScreenPointToUserPoint(event->pos(), userCoords, userCoords + 1, &cache);
+                double userCoords[CurveEditor::Impl::Dimensions];
+                ScreenPointToUserPoint(event->pos(), userCoords, &cache);
                 const Impl::Curve::Vector p({ double(userCoords[X]), double(userCoords[Y]) });
 
                 QObject::connect(&insertStrongNormalPoint, &QAction::triggered, [this, &p]()
@@ -332,9 +322,9 @@ void CurveEditor::CreateTransformCache(TransformCache* cache)
     cache->screenRange[Y] = cache->screenMin.y() - cache->screenMax.y();
 }
 
-void CurveEditor::ScreenPointToUserPoint(const QPoint& p, int* x, int* y, TransformCache* cache)
+void CurveEditor::ScreenPointToUserPoint(const QPoint& p, double(&coords)[2], TransformCache* cache)
 {
-    assert(x != nullptr && y != nullptr && cache != nullptr);
+    assert(cache != nullptr);
 
     if (!cache->visited)
     {
@@ -347,11 +337,11 @@ void CurveEditor::ScreenPointToUserPoint(const QPoint& p, int* x, int* y, Transf
         float(cache->screenMin.y() - p.y()) / cache->screenRange[Y]
     };
 
-    *x = cache->userRange[X] * percents[X];
-    *y = cache->userRange[Y] * percents[Y];
+    coords[X] = cache->userRange[X] * percents[X];
+    coords[Y] = cache->userRange[Y] * percents[Y];
 }
 
-void CurveEditor::UserPointToScreenPoint(int x, int y, QPoint* p, TransformCache* cache)
+void CurveEditor::UserPointToScreenPoint(double const (&coords)[2], QPoint* p, TransformCache* cache)
 {
     assert(cache != nullptr && p != nullptr);
 
@@ -362,8 +352,8 @@ void CurveEditor::UserPointToScreenPoint(int x, int y, QPoint* p, TransformCache
 
     const float percents[]
     {
-        float(x - m_d->min.coords[X]) / cache->userRange[X],
-        float(y - m_d->min.coords[Y]) / cache->userRange[Y]
+        float(coords[X] -m_d->min.coords[X]) / cache->userRange[X],
+        float(coords[Y] - m_d->min.coords[Y]) / cache->userRange[Y]
     };
 
     *p = QPoint(
