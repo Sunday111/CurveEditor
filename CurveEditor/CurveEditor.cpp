@@ -21,8 +21,8 @@ public:
     {}
 
     bool visited;
-    int userRange[2];
     int screenRange[2];
+    double userRange[2];
     QPoint screenMin;
     QPoint screenMax;
 };
@@ -314,10 +314,10 @@ void CurveEditor::ScreenPointToUserPoint(const QPoint& p, double(&coords)[2], Tr
         CreateTransformCache(cache);
     }
 
-    const float percents[]
+    const double percents[]
     {
-        float(p.x() - cache->screenMin.x()) / cache->screenRange[X],
-        float(cache->screenMin.y() - p.y()) / cache->screenRange[Y]
+        double(p.x() - cache->screenMin.x()) / cache->screenRange[X],
+        double(cache->screenMin.y() - p.y()) / cache->screenRange[Y]
     };
 
     coords[X] = cache->userRange[X] * percents[X];
@@ -333,10 +333,10 @@ void CurveEditor::UserPointToScreenPoint(double const (&coords)[2], QPoint* p, T
         CreateTransformCache(cache);
     }
 
-    const float percents[]
+    const double percents[]
     {
-        float(coords[X] -m_d->min.coords[X]) / cache->userRange[X],
-        float(coords[Y] - m_d->min.coords[Y]) / cache->userRange[Y]
+        double(coords[X] -m_d->min.coords[X]) / cache->userRange[X],
+        double(coords[Y] - m_d->min.coords[Y]) / cache->userRange[Y]
     };
 
     *p = QPoint(

@@ -5,19 +5,94 @@
 #include <vector>
 #include <memory>
 #include <sstream>
+#include <unordered_map>
 
-inline size_t Factorial(size_t val)
+long long unsigned gcd(long long unsigned a, long long unsigned b)
 {
-    if (val < 2) return 1;
-
-    return val * (Factorial(val - 1));
+    int c;
+    while (a != 0) {
+        c = a; a = b%a;  b = c;
+    }
+    return b;
 }
 
+
 /* The number of combinations from n by i */
-inline size_t Combinations(size_t n, size_t i)
+inline long double Combinations(size_t n, size_t i)
 {
+    using lt = long long unsigned;
+
+    std::unordered_map<lt, lt> numerator, denominator;
+
+    auto factorial = [](std::unordered_map<lt, lt>& map, size_t n)
+    {
+        for (size_t i = 2; i <= n; ++i)
+        {
+            auto iVal = map.find(i);
+
+            if (iVal == map.end())
+            {
+                map[i] = 1;
+            }
+            else
+            {
+                ++iVal->second;
+            }
+        }
+    };
+
+    factorial(numerator, n);
+    factorial(denominator, i);
+    factorial(denominator, n - i);
+
+    long double result = 1;
+
+    for (auto iNumerator = numerator.begin(); iNumerator != numerator.end(); ++iNumerator)
+    {
+        auto iDenominator = denominator.find(iNumerator->first);
+
+        bool updateNumerator = false;
+        bool updateDenominator = false;
+
+        if (iDenominator == denominator.end())
+        {
+            updateNumerator = true;
+        }
+        else if (iNumerator->second < iDenominator->second)
+        {
+            iDenominator->second -= iNumerator->second;
+            iNumerator->second = 0;
+
+            updateDenominator = true;
+        }
+        else if (iDenominator->second < iNumerator->second)
+        {
+            iNumerator->second -= iDenominator->second;
+            iDenominator->second = 0;
+
+            updateNumerator = true;
+        }
+        else
+        {
+            iNumerator->second = 0;
+            iDenominator->second = 0;
+        }
+
+        if (updateNumerator)
+        {
+            result *= std::pow(iNumerator->first, iNumerator->second);
+        }
+
+        if (updateDenominator)
+        {
+            result /= std::pow(iDenominator->first, iDenominator->second);
+        }
+    }
+
+    return result;
+
     // n! / (i!(n-i)!)
-    return Factorial(n) / (Factorial(i) * Factorial(n - i));
+    //return Factorial(n) / (Factorial(i) * Factorial(n - i));
 }
 
 template<class T>
@@ -25,6 +100,46 @@ inline T BernsteinPolynomial(size_t n, size_t i, const T& t)
 {
     return
         Combinations(n, i) *
+        std::pow(t, i) *
+        std::pow(1 - t, n - i);
+}
+
+class CombinationsCache
+{
+public:
+
+    const std::vector<size_t>& GetValues(size_t n) const
+    {
+        auto iCache = m_d.find(n);
+
+        if (iCache == m_d.end())
+        {
+            auto& values = m_d[n];
+
+            values.reserve(n + 1);
+
+            for (size_t i = 0; i < n + 1; ++i)
+            {
+                values.push_back(Combinations(n, i));
+            }
+
+            return values;
+        }
+
+        return iCache->second;
+    }
+
+private:
+    mutable std::unordered_map<size_t, std::vector<size_t>> m_d;
+};
+
+template<class T>
+inline T BernsteinPolynomial(size_t n, size_t i, const T& t, CombinationsCache* cache)
+{
+    const T combinations = cache == nullptr ? Combinations(n, i) : cache->GetValue(n, i);
+
+    return
+        combinations *
         std::pow(t, i) *
         std::pow(1 - t, n - i);
 }
@@ -538,12 +653,14 @@ public:
     using StrongPoint = typename Points::StrongPoint;
     using StrongPointPtr = typename Points::StrongPointPtr;
 
-    explicit BezierSegment(const std::shared_ptr<StrongPoint>& start, const Vector& end, size_t order, BezierCurveStrongPointType endPointType) :
-        m_points(start, end, order, endPointType)
+    explicit BezierSegment(const std::shared_ptr<StrongPoint>& start, const Vector& end, size_t order, BezierCurveStrongPointType endPointType, CombinationsCache* cache) :
+        m_points(start, end, order, endPointType),
+        m_cache(cache)
     {}
     BezierSegment(const BezierSegment&) = delete;
     BezierSegment(BezierSegment&& uref) :
-        m_points(std::move(uref.m_points))
+        m_points(std::move(uref.m_points)),
+        m_cache(uref.m_cache)
     {}
 
     Points& RPoints() { return m_points; }
@@ -562,9 +679,15 @@ public:
         const size_t pointsCount = m_points.PointsCount();
         const size_t order = m_points.Order();
 
+        auto& values = m_cache->GetValues(order);
+
         for (size_t i = 0; i < pointsCount; ++i)
         {
-            result += m_points[i] * BernsteinPolynomial<T>(order, i, t);
+            result +=
+                m_points[i] *
+                values[i] *
+                std::pow(t, i) *
+                std::pow(1 - t, order - i);
         }
 
         return result;
@@ -574,6 +697,7 @@ public:
     BezierSegment& operator=(BezierSegment&& uref)
     {
         m_points = std::move(uref.m_points);
+        m_cache = uref.m_cache;
         return *this;
     }
 
@@ -583,6 +707,7 @@ private:
     {}
 
     Points m_points;
+    CombinationsCache* m_cache;
 };
 
 /* Where n is Bezier curve order */
@@ -609,8 +734,13 @@ public:
         //m_segments.push_back(initSegment);
         auto dir = endPoint - startPoint;
 
-        Segment initSegment_0(std::make_shared<StrongPoint>(startPoint.coords, BezierCurveStrongPointType::Normal), startPoint + dir * 0.5, n, BezierCurveStrongPointType::Normal);
-        Segment initSegment_1(initSegment_0.RPoints().RLastPoint(), endPoint, n, BezierCurveStrongPointType::Normal);
+        Segment initSegment_0(
+            std::make_shared<StrongPoint>(startPoint.coords, BezierCurveStrongPointType::Normal),
+            startPoint + dir * 0.5, n, BezierCurveStrongPointType::Normal, &m_combintaionsCache);
+
+        Segment initSegment_1(initSegment_0.RPoints().RLastPoint(), endPoint, n,
+            BezierCurveStrongPointType::Normal, &m_combintaionsCache);
+
         m_segments.push_back(std::move(initSegment_0));
         m_segments.push_back(std::move(initSegment_1));
 
@@ -800,7 +930,7 @@ public:
                 return true;
             }
 
-            prevIndices += segment.RPoints().PointsCount();
+            prevIndices += segment.RPoints().PointsCount() - 1;
         }
 
         return false;
@@ -991,6 +1121,7 @@ public:
 
 private:
 
+    CombinationsCache m_combintaionsCache;
     size_t m_pointsCount;
     std::vector<Segment> m_segments;
 };
