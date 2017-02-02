@@ -1216,12 +1216,25 @@ private:
             context.points[targ].point->coords[x] = coords.coords[x];
         }
 
+        StrongPointPtr range[] =
+        {
+            RFirstPoint(),
+            RLastPoint()
+        };
+
         for (int i = 1; i < dimensions; ++i)
         {
             auto& to = context.points[targ].point->coords[i];
-            auto& from = coords.coords[i];
+            to = coords.coords[i];
 
-            to = from < 0 ? 0 : from;
+            if(to < range[0]->coords[i])
+            {
+                to = range[0]->coords[i];
+            }
+            else if(to > range[1]->coords[i])
+            {
+                to = range[1]->coords[i];
+            }
         }
 
         SyncNeighBors<updatePrev, Dir::prev>(context);
