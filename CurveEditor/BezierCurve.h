@@ -1183,7 +1183,10 @@ private:
                 const auto dAB = (a - b) * sign;
                 const auto dBC = (b - c) * sign;
 
-                c.coords[y] = b.coords[y] - sign * (dBC.coords[x] * dAB.coords[y]) / dAB.coords[x];
+                for(int coord = 1; coord < dimensions; ++coord)
+                {
+                    c.coords[coord] = b.coords[coord] - sign * (dBC.coords[x] * dAB.coords[coord]) / dAB.coords[x];
+                }
 
                 // Implicit recursive step
                 MovePointImpl<true, false>(ptToSmooth, c);
