@@ -89,24 +89,24 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(IntDir);$(SolutionDir);$(QT_5_4_1_OpenGL_MSVC_120_64)\include;$(QT_5_4_1_OpenGL_MSVC_120_64)\include\QtANGLE;$(DXSDK_DIR)Include\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IntDir);$(SolutionDir);$(QT_5_7_OpenGL_MSVC_140_64)\include;$(QT_5_7_OpenGL_MSVC_140_64)\include\QtANGLE;$(DXSDK_DIR)Include\</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NOMINMAX;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(QT_5_4_1_OpenGL_MSVC_120_64)\lib;$(DXSDK_DIR)\Lib\x64;$(DXSDK_DIR)\Lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(QT_5_7_OpenGL_MSVC_140_64)\lib;$(DXSDK_DIR)\Lib\x64;$(DXSDK_DIR)\Lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>Qt5Cored.lib;Qt5Guid.lib;Qt5Widgetsd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy $(QT_5_4_1_OpenGL_MSVC_120_64)\bin\qt5cored.dll $(OutDir) /s /d
-xcopy $(QT_5_4_1_OpenGL_MSVC_120_64)\bin\qt5widgetsd.dll $(OutDir) /s /d
-xcopy $(QT_5_4_1_OpenGL_MSVC_120_64)\bin\qt5guid.dll $(OutDir) /s /d
-xcopy $(QT_5_4_1_OpenGL_MSVC_120_64)\bin\icudt53.dll $(OutDir) /s /d
-xcopy $(QT_5_4_1_OpenGL_MSVC_120_64)\bin\icuin53.dll $(OutDir) /s /d
-xcopy $(QT_5_4_1_OpenGL_MSVC_120_64)\bin\icuuc53.dll $(OutDir) /s /d
-xcopy $(QT_5_4_1_OpenGL_MSVC_120_64)\plugins\platforms\qwindowsd.dll $(OutDir) /s /d</Command>
+      <Command>xcopy $(QT_5_7_OpenGL_MSVC_140_64)\bin\qt5cored.dll $(OutDir) /s /d
+xcopy $(QT_5_7_OpenGL_MSVC_140_64)\bin\qt5widgetsd.dll $(OutDir) /s /d
+xcopy $(QT_5_7_OpenGL_MSVC_140_64)\bin\qt5guid.dll $(OutDir) /s /d
+xcopy $(QT_5_7_OpenGL_MSVC_140_64)\bin\icudt53.dll $(OutDir) /s /d
+xcopy $(QT_5_7_OpenGL_MSVC_140_64)\bin\icuin53.dll $(OutDir) /s /d
+xcopy $(QT_5_7_OpenGL_MSVC_140_64)\bin\icuuc53.dll $(OutDir) /s /d
+xcopy $(QT_5_7_OpenGL_MSVC_140_64)\plugins\platforms\qwindowsd.dll $(OutDir) /s /d</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -114,24 +114,24 @@ xcopy $(QT_5_4_1_OpenGL_MSVC_120_64)\plugins\platforms\qwindowsd.dll $(OutDir) /
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(IntDir);$(SolutionDir);$(QT_5_4_1_OpenGL_MSVC_120_64)\include;$(QT_5_4_1_OpenGL_MSVC_120_64)\include\QtANGLE;$(DXSDK_DIR)Include\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IntDir);$(SolutionDir);$(QT_5_7_OpenGL_MSVC_140_64)\include;$(QT_5_7_OpenGL_MSVC_140_64)\include\QtANGLE;$(DXSDK_DIR)Include\</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NOMINMAX;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(QT_5_4_1_OpenGL_MSVC_120_64)\lib;$(DXSDK_DIR)\Lib\x64;$(DXSDK_DIR)\Lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(QT_5_7_OpenGL_MSVC_140_64)\lib;$(DXSDK_DIR)\Lib\x64;$(DXSDK_DIR)\Lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>Qt5Cored.lib;Qt5Guid.lib;Qt5Widgetsd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy $(QT_5_4_1_OpenGL_MSVC_120_64)\bin\qt5cored.dll $(OutDir) /s /d
-xcopy $(QT_5_4_1_OpenGL_MSVC_120_64)\bin\qt5widgetsd.dll $(OutDir) /s /d
-xcopy $(QT_5_4_1_OpenGL_MSVC_120_64)\bin\qt5guid.dll $(OutDir) /s /d
-xcopy $(QT_5_4_1_OpenGL_MSVC_120_64)\bin\icudt53.dll $(OutDir) /s /d
-xcopy $(QT_5_4_1_OpenGL_MSVC_120_64)\bin\icuin53.dll $(OutDir) /s /d
-xcopy $(QT_5_4_1_OpenGL_MSVC_120_64)\bin\icuuc53.dll $(OutDir) /s /d
-xcopy $(QT_5_4_1_OpenGL_MSVC_120_64)\plugins\platforms\qwindowsd.dll $(OutDir) /s /d</Command>
+      <Command>xcopy $(QT_5_7_OpenGL_MSVC_140_64)\bin\qt5cored.dll $(OutDir) /s /d
+xcopy $(QT_5_7_OpenGL_MSVC_140_64)\bin\qt5widgetsd.dll $(OutDir) /s /d
+xcopy $(QT_5_7_OpenGL_MSVC_140_64)\bin\qt5guid.dll $(OutDir) /s /d
+xcopy $(QT_5_7_OpenGL_MSVC_140_64)\bin\icudt53.dll $(OutDir) /s /d
+xcopy $(QT_5_7_OpenGL_MSVC_140_64)\bin\icuin53.dll $(OutDir) /s /d
+xcopy $(QT_5_7_OpenGL_MSVC_140_64)\bin\icuuc53.dll $(OutDir) /s /d
+xcopy $(QT_5_7_OpenGL_MSVC_140_64)\plugins\platforms\qwindowsd.dll $(OutDir) /s /d</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -141,14 +141,14 @@ xcopy $(QT_5_4_1_OpenGL_MSVC_120_64)\plugins\platforms\qwindowsd.dll $(OutDir) /
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(IntDir);$(SolutionDir);$(QT_5_4_1_OpenGL_MSVC_120_64)\include;$(QT_5_4_1_OpenGL_MSVC_120_64)\include\QtANGLE;$(DXSDK_DIR)Include\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IntDir);$(SolutionDir);$(QT_5_7_OpenGL_MSVC_140_64)\include;$(QT_5_7_OpenGL_MSVC_140_64)\include\QtANGLE;$(DXSDK_DIR)Include\</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NOMINMAX;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(QT_5_4_1_OpenGL_MSVC_120_64)\lib;$(DXSDK_DIR)\Lib\x64;$(DXSDK_DIR)\Lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(QT_5_7_OpenGL_MSVC_140_64)\lib;$(DXSDK_DIR)\Lib\x64;$(DXSDK_DIR)\Lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>Qt5Core.lib;Qt5Gui.lib;Qt5Widgets.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
@@ -166,14 +166,14 @@ xcopy $(SolutionDir)..\ThirdParty\platforms\*.* $(OutDir)platforms\  /s /d</Comm
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(IntDir);$(SolutionDir);$(QT_5_4_1_OpenGL_MSVC_120_64)\include;$(QT_5_4_1_OpenGL_MSVC_120_64)\include\QtANGLE;$(DXSDK_DIR)Include\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IntDir);$(SolutionDir);$(QT_5_7_OpenGL_MSVC_140_64)\include;$(QT_5_7_OpenGL_MSVC_140_64)\include\QtANGLE;$(DXSDK_DIR)Include\</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NOMINMAX;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(QT_5_4_1_OpenGL_MSVC_120_64)\lib;$(DXSDK_DIR)\Lib\x64;$(DXSDK_DIR)\Lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(QT_5_7_OpenGL_MSVC_140_64)\lib;$(DXSDK_DIR)\Lib\x64;$(DXSDK_DIR)\Lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>Qt5Core.lib;Qt5Gui.lib;Qt5Widgets.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
@@ -191,10 +191,10 @@ xcopy $(SolutionDir)..\ThirdParty\platforms\*.* $(OutDir)platforms\  /s /d</Comm
   <ItemGroup>
     <ClInclude Include="BezierCurve.h" />
     <CustomBuild Include="CurveEditor.h">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QT_5_4_1_OpenGL_MSVC_120_64)\bin\moc.exe "%(FullPath)" -o "$(IntDir)moc/%(Filename).h"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QT_5_4_1_OpenGL_MSVC_120_64)\bin\moc.exe "%(FullPath)" -o "$(IntDir)moc/%(Filename).h"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(QT_5_4_1_OpenGL_MSVC_120_64)\bin\moc.exe "%(FullPath)" -o "$(IntDir)moc/%(Filename).h"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(QT_5_4_1_OpenGL_MSVC_120_64)\bin\moc.exe "%(FullPath)" -o "$(IntDir)moc/%(Filename).h"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QT_5_7_OpenGL_MSVC_140_64)\bin\moc.exe "%(FullPath)" -o "$(IntDir)moc/%(Filename).h"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QT_5_7_OpenGL_MSVC_140_64)\bin\moc.exe "%(FullPath)" -o "$(IntDir)moc/%(Filename).h"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(QT_5_7_OpenGL_MSVC_140_64)\bin\moc.exe "%(FullPath)" -o "$(IntDir)moc/%(Filename).h"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(QT_5_7_OpenGL_MSVC_140_64)\bin\moc.exe "%(FullPath)" -o "$(IntDir)moc/%(Filename).h"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compiling %(Filename)%(Extension) using MOC</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compiling %(Filename)%(Extension) using MOC</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling %(Filename)%(Extension) using MOC</Message>

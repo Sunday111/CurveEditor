@@ -204,6 +204,18 @@ public:
         return *this;
     }
 
+    Vector operator-() const
+    {
+        Vector result;
+
+        for(int i = 0; i < dimensions; ++i)
+        {
+            result.coords[i] = -coords[i];
+        }
+
+        return result;
+    }
+
     Vector operator- (const Vector& p) const
     {
         Vector result(*this);
@@ -668,7 +680,7 @@ public:
 
     BezierSegment SplitInPoint(const Vector& p, BezierCurveStrongPointType pointType)
     {
-        return BezierSegment(m_points.SplitInPoint(p, pointType));
+        return BezierSegment(m_points.SplitInPoint(p, pointType), m_cache);
     }
 
     Vector operator() (const T& t) const
@@ -702,8 +714,9 @@ public:
     }
 
 private:
-    BezierSegment(Points&& points) :
-        m_points(std::move(points))
+    BezierSegment(Points&& points, CombinationsCache* cache) :
+        m_points(std::move(points)),
+        m_cache(cache)
     {}
 
     Points m_points;
@@ -1090,7 +1103,86 @@ public:
         return false;
     }
 
-    bool MovePoint(size_t pointIndex, const Vector& coords)
+private:
+
+    enum Axis { x, y, z };
+    enum Dir { prev, targ, next };
+    
+    template<Dir>
+    struct SyncHelper;
+
+    template<>
+    struct SyncHelper<Dir::prev>
+    {
+        enum { Sign = 1 };
+    };
+
+    template<>
+    struct SyncHelper<Dir::next>
+    {
+        enum { Sign = -1 };
+    };
+
+    template<bool sync, Dir dir>
+    struct IndexHelper
+    {
+        static bool IndexIsValid(size_t, size_t)
+        {
+            return false;
+        }
+    };
+
+    template<>
+    struct IndexHelper<true, Dir::prev>
+    {
+        static bool IndexIsValid(size_t idx, size_t)
+        {
+            return idx > 1;
+        }
+    };
+
+    template<>
+    struct IndexHelper<true, Dir::next>
+    {
+        static bool IndexIsValid(size_t idx, size_t cnt)
+        {
+            return idx + 1 < cnt;
+        }
+    };
+
+    template<bool sync, Dir dir>
+    void SyncNeighBors(const MovePointContext& context)
+    {
+        constexpr const int sign = SyncHelper<dir>::Sign;
+
+        if(IndexHelper<sync, dir>::IndexIsValid(context.targetPointIndex, m_pointsCount)
+            && context.points[prev].type == BezierCurvePointType::Strong_Smooth)
+        {
+            BezierCurvePointType pointType;
+            size_t segmentIndex;
+            size_t indexInSegment;
+
+            const size_t ptToSmooth = context.targetPointIndex - sign * 2;
+
+            if(GetPointInfo(ptToSmooth, nullptr, &pointType, &segmentIndex, &indexInSegment) &&
+                pointType == BezierCurvePointType::Weak)
+            {
+                const auto& pa = *context.points[targ].point;
+                const auto& pb = *context.points[dir].point;
+                auto pc = m_segments[segmentIndex].RPoints()[indexInSegment];
+
+                const auto dAB = (pa - pb) * sign;
+                const auto dBC = (pb - pc) * sign;
+
+                pc.coords[y] = pb.coords[y] - sign * (dBC.coords[x] * dAB.coords[y]) / dAB.coords[x];
+
+                MovePointImpl<true, false>(ptToSmooth, pc);
+            }
+        }
+    }
+
+    template<bool updatePrev, bool updateNext>
+    bool MovePointImpl(size_t pointIndex, const Vector& coords)
     {
         MovePointContext context;
         std::memset(&context, 0, sizeof(MovePointContext));
@@ -1098,25 +1190,38 @@ public:
 
         WalkThroughThePoints(MovePointHelper, &context);
 
-        if (context.points[1].point == nullptr)
+        if (context.points[targ].point == nullptr)
         {
             return false;
         }
 
         const T tol = 3.0;
 
-        if ((context.points[0].point == nullptr || coords.coords[0] > context.points[0].point->coords[0]) &&
-            (context.points[2].point == nullptr || coords.coords[0] < context.points[2].point->coords[0]))
+        if ((context.points[prev].point == nullptr || coords.coords[x] > context.points[prev].point->coords[x]) &&
+            (context.points[next].point == nullptr || coords.coords[x] < context.points[next].point->coords[x]))
         {
-            context.points[1].point->coords[0] = coords.coords[0];
+            context.points[targ].point->coords[x] = coords.coords[x];
         }
 
         for (int i = 1; i < dimensions; ++i)
         {
-            context.points[1].point->coords[i] = coords.coords[i];
+            auto& to = context.points[targ].point->coords[i];
+            auto& from = coords.coords[i];
+
+            to = from < 0 ? 0 : from;
         }
 
+        SyncNeighBors<updatePrev, Dir::prev>(context);
+
+        SyncNeighBors<updateNext, Dir::next>(context);
+
         return true;
+    }
+
+public:
+    bool MovePoint(size_t pointIndex, const Vector& coords)
+    {
+        return MovePointImpl<true, true>(pointIndex, coords);
     }
 
 private:
