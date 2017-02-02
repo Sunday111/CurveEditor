@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <cassert>
 #include <cmath>
@@ -15,7 +15,6 @@ long long unsigned gcd(long long unsigned a, long long unsigned b)
     }
     return b;
 }
-
 
 /* The number of combinations from n by i */
 inline long double Combinations(size_t n, size_t i)
@@ -819,6 +818,7 @@ public:
         return c->GetPoint(index, isWeak, const_cast<const Vector**>(p));
     }
 
+    // Find appropriate segment and insert point there
     template<BezierCurvePointType pointType>
     bool InsertPoint(const Vector& p)
     {
@@ -841,6 +841,7 @@ public:
         return false;
     }
 
+    // Instert strong point in segment
     template<BezierCurvePointType pointType>
     void InsertPointImpl(const Vector& p, size_t segmentIndex)
     {
@@ -850,6 +851,7 @@ public:
                 static_cast<BezierCurveStrongPointType>(pointType)));
     }
 
+    // Instert weak point in segment
     template<>
     void InsertPointImpl<BezierCurvePointType::Weak>(const Vector& p, size_t segmentIndex)
     {
@@ -875,6 +877,7 @@ public:
         return Vector();
     }
 
+    /* Get point info by id */
     bool GetPointInfo(size_t pointIndex,
         const Vector** point = nullptr,
         BezierCurvePointType* pointType = nullptr,
@@ -909,6 +912,7 @@ public:
         return false;
     }
 
+    /* Find point by coodinates and toletance and get it's info */
     bool GetPointInfo(const Vector& p, const T& tol,
         size_t* segmentIndex = nullptr,
         BezierCurvePointType* pointType = nullptr,
@@ -949,64 +953,53 @@ public:
         return false;
     }
 
-
+    /* Remove point by it's global index */
     bool RemovePoint(size_t index)
     {
-        const size_t segmentsCount = m_segments.size();
-
-        for (size_t segmentIndex = 0; segmentIndex < segmentsCount; ++segmentIndex)
+        if(index == 0 || index >= m_pointsCount - 1)
         {
-            Segment& segment = m_segments[segmentIndex];
-            Segment::Points& segmentPoints = segment.RPoints();
-            const size_t segmentPointsCount = segmentPoints.PointsCount();
-
-            if (index < segmentPointsCount)
-            {
-                bool pointRemoved;
-
-                if (index == 0)
-                {
-                    if (segmentIndex == 0)
-                    {
-                        pointRemoved = false;
-                    }
-                    else
-                    {
-                        const size_t mergeSegmentIndex = segmentIndex - 1;
-                        pointRemoved = segmentPoints.Merge(m_segments[segmentIndex - 1].RPoints());
-                        m_segments.erase(m_segments.begin() + mergeSegmentIndex);
-                    }
-                }
-                else if (index == segmentPointsCount - 1)
-                {
-                    if (segmentIndex == segmentsCount - 1)
-                    {
-                        pointRemoved = false;
-                    }
-                    else
-                    {
-                        const size_t mergeSegmentIndex = segmentIndex + 1;
-                        pointRemoved = segmentPoints.Merge(m_segments[segmentIndex + 1].RPoints());
-                        m_segments.erase(m_segments.begin() + mergeSegmentIndex);
-                    }
-                }
-                else
-                {
-                    pointRemoved = segmentPoints.RemoveWeakPoint(index);
-                }
-
-                if (pointRemoved)
-                {
-                    --m_pointsCount;
-                }
-
-                return pointRemoved;
-            }
-            
-            index -= segmentPointsCount;
+            return false;
         }
 
-        return false;
+        const size_t segmentsCount = m_segments.size();
+
+        size_t segmentIndex, indexInSegment;
+        if(!GetPointInfo(index, nullptr, nullptr, &segmentIndex, &indexInSegment))
+        {
+            return false;
+        }
+
+        auto& segmentPoints = m_segments[segmentIndex].RPoints();
+
+        if(indexInSegment == 0)
+        {
+            // Merge this segment points in the pervious one
+            m_segments[segmentIndex - 1].RPoints().Merge(segmentPoints);
+
+            // Erase merged segment
+            auto eraseIt = m_segments.begin();
+            std::advance(eraseIt, segmentIndex);
+            m_segments.erase(eraseIt);
+        }
+        else if(indexInSegment == segmentPoints.PointsCount() - 1)
+        {
+            // Merge next segment points into this segment
+            segmentPoints.Merge(m_segments[segmentIndex + 1].RPoints());
+
+            // Erase merged segment
+            auto eraseIt = m_segments.begin();
+            std::advance(eraseIt, segmentIndex + 1);
+            m_segments.erase(eraseIt);
+        }
+        else
+        {
+            // Just remove point from segment
+            segmentPoints.RemoveWeakPoint(indexInSegment);
+        }
+
+        --m_pointsCount;
+
+        return true;
     }
 
 private:
@@ -1210,8 +1203,8 @@ private:
 
         const T tol = 3.0;
 
-        if ((context.points[prev].point == nullptr || coords.coords[x] > context.points[prev].point->coords[x]) &&
-            (context.points[next].point == nullptr || coords.coords[x] < context.points[next].point->coords[x]))
+        if ((context.points[prev].point != nullptr && coords.coords[x] > context.points[prev].point->coords[x]) &&
+            (context.points[next].point != nullptr && coords.coords[x] < context.points[next].point->coords[x]))
         {
             context.points[targ].point->coords[x] = coords.coords[x];
         }
