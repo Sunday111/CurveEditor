@@ -145,7 +145,7 @@ void CurveEditor::paintEvent(QPaintEvent * event)
             BezierCurvePointType /*pointType*/, const Impl::Vector* point, void* userContext)
     {
         Impl::DrawPointsContext* context = reinterpret_cast<Impl::DrawPointsContext*>(userContext);
-    
+
         if (indexInCurve == 0)
         {
             context->_this->UserPointToScreenPoint(point->coords, &context->prevPoint, &context->cache);

@@ -654,7 +654,8 @@ protected:
     std::vector<Vector> m_weakPoints;
 };
 
-/* Where n is Bezier curve order */
+/* This is the class that represents single BezierCurve
+ */
 template<class T, size_t dimensions>
 class BezierSegment
 {
@@ -677,6 +678,9 @@ public:
     Points& RPoints() { return m_points; }
     const Points& RPoints() const { return m_points; }
 
+    /* Split this bezier curve.
+     * Produces the new segment which must be placed before this segment
+     */
     BezierSegment SplitInPoint(const Vector& p, BezierCurveStrongPointType pointType)
     {
         return BezierSegment(m_points.SplitInPoint(p, pointType), m_cache);
@@ -722,7 +726,7 @@ private:
     CombinationsCache* m_cache;
 };
 
-/* Where n is Bezier curve order */
+/* This class is array of bezier curves */
 template<class T, size_t dimensions>
 class BezierCurve
 {
@@ -771,53 +775,26 @@ public:
         return m_segments.front().RPoints().RFirstPoint();
     }
 
-    StrongPointPtr& RLastPoint() { return m_segments.back().RPoints().RLastPoint(); }
-    const StrongPointPtr& RLastPoint() const { return m_segments.back().RPoints().RLastPoint(); }
-    const StrongPointPtr& GetEndPoint() const { return m_endPoint; }
-
-    const std::vector<Segment>& GetSegments() const { return m_segments; }
     size_t GetPointsCount() const { return m_pointsCount; }
 
-    bool GetPoint(size_t index, bool* isWeak, const Vector** p) const
+    // Get the reference to the first point in the curve
+    StrongPointPtr& RLastPoint()
     {
-        assert(index < m_pointsCount);
-    
-        size_t minIndex = 0;
-    
-        const size_t segmentsCount = m_segments.size();
-        for (size_t segmentIdx = 0; segmentIdx < segmentsCount; ++segmentIdx)
-        {
-            const Segment& segment = m_segments[segmentIdx];
-            auto& points = segment.RPoints();
-    
-            const size_t order = points.Order();
-            const size_t maxIndex = minIndex + order;
-    
-            if (index >= minIndex && index <= maxIndex)
-            {
-                const size_t segmentIndex = index - minIndex;
-    
-                if (isWeak != nullptr)
-                {
-                    *isWeak = !(segmentIndex == 0 || segmentIndex == order);
-                }
-    
-                *p = &points[segmentIndex];
-                return true;
-            }
-    
-            minIndex = maxIndex;
-        }
-    
-        return false;
+        return m_segments.back().RPoints().RLastPoint();
     }
 
-    bool GetPoint(size_t index, bool* isWeak, Vector** p)
+    // Get the const reference to the first point in the curve
+    const StrongPointPtr& RLastPoint() const
     {
-        const BezierCurve* c = this;
-        return c->GetPoint(index, isWeak, const_cast<const Vector**>(p));
+        return m_segments.back().RPoints().RLastPoint();
     }
 
+    // Get curve segments
+    const std::vector<Segment>& GetSegments() const
+    {
+        return m_segments;
+    }
+    
     // Find appropriate segment and insert point there
     template<BezierCurvePointType pointType>
     bool InsertPoint(const Vector& p)
@@ -858,6 +835,7 @@ public:
         m_segments[segmentIndex].RPoints().InsertWeakPoint(p);
     }
 
+    // Use this curve as the function
     Vector operator()(const T& curveParameter) const
     {
         const T& sx = RFirstPoint()->coords[0];
@@ -877,7 +855,10 @@ public:
         return Vector();
     }
 
-    /* Get point info by id */
+    /* Get point info by id.
+     * You are not able to change point coordinates by the pointer received
+     * using this function use MovePoint method to do that
+     */
     bool GetPointInfo(size_t pointIndex,
         const Vector** point = nullptr,
         BezierCurvePointType* pointType = nullptr,
@@ -912,7 +893,10 @@ public:
         return false;
     }
 
-    /* Find point by coodinates and toletance and get it's info */
+    /* Find point by coodinates and tolerance and get it's info.
+     * You are not able to change point coordinates by the pointer received
+     * using this function use MovePoint method to do that
+     */
     bool GetPointInfo(const Vector& p, const T& tol,
         size_t* segmentIndex = nullptr,
         BezierCurvePointType* pointType = nullptr,
@@ -1003,6 +987,7 @@ public:
     }
 
 private:
+    // Context for WalkThroughThePoints
     struct WalkContext
     {
         size_t prevPointsCount;
@@ -1011,6 +996,7 @@ private:
         WalkThroughThePointsFn userFn;
     };
 
+    // Context for MovePoint
     struct MovePointContext
     {
         size_t targetPointIndex;
@@ -1065,13 +1051,18 @@ private:
     }
 
 public:
-    /* Returns true in case when lambda has returned 'true' at least one time */
+    /* Call caustom function for each point in curve (const overload).
+     * Returns true in case when lambda has returned 'true' at least one time
+     */
     bool WalkThroughThePoints(WalkThroughThePointsConstFn f, void* context) const
     {
         return const_cast<BezierCurve*>(this)->WalkThroughThePoints(
             reinterpret_cast<WalkThroughThePointsFn>(f), context);
     }
 
+    /* Call caustom function for each point in curve (non-const overload).
+     * Returns true in case when lambda has returned 'true' at least one time
+     */
     bool WalkThroughThePoints(WalkThroughThePointsFn fn, void* context)
     {
         WalkContext walkContext;
@@ -1143,8 +1134,10 @@ private:
         }
     };
 
+    /* Synchronize neighbors around strong smoothed point
+     */
     template<bool sync, Dir dir>
-    void SyncNeighBors(const MovePointContext& context)
+    void SyncNeighbors(const MovePointContext& context)
     {
         constexpr const int sign = SyncHelper<dir>::Sign;
 
@@ -1187,6 +1180,8 @@ private:
         }
     }
 
+    /* Template helper for MovePoint and SyncNeighbors methods
+     */
     template<bool updatePrev, bool updateNext>
     bool MovePointImpl(size_t pointIndex, const Vector& coords)
     {
@@ -1230,14 +1225,16 @@ private:
             }
         }
 
-        SyncNeighBors<updatePrev, Dir::prev>(context);
+        SyncNeighbors<updatePrev, Dir::prev>(context);
 
-        SyncNeighBors<updateNext, Dir::next>(context);
+        SyncNeighbors<updateNext, Dir::next>(context);
 
         return true;
     }
 
 public:
+    /* Set new coordinates for point by it's index
+     */
     bool MovePoint(size_t pointIndex, const Vector& coords)
     {
         return MovePointImpl<true, true>(pointIndex, coords);
