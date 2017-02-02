@@ -1156,7 +1156,7 @@ private:
         constexpr const int sign = SyncHelper<dir>::Sign;
 
         if(IndexHelper<sync, dir>::IndexIsValid(context.targetPointIndex, m_pointsCount)
-            && context.points[prev].type == BezierCurvePointType::Strong_Smooth)
+            && context.points[dir].type == BezierCurvePointType::Strong_Smooth)
         {
             BezierCurvePointType pointType;
             size_t segmentIndex;
@@ -1167,16 +1167,26 @@ private:
             if(GetPointInfo(ptToSmooth, nullptr, &pointType, &segmentIndex, &indexInSegment) &&
                 pointType == BezierCurvePointType::Weak)
             {
-                const auto& pa = *context.points[targ].point;
-                const auto& pb = *context.points[dir].point;
-                auto pc = m_segments[segmentIndex].RPoints()[indexInSegment];
+                // A is moved point
+                const auto& a = *context.points[targ].point;
 
-                const auto dAB = (pa - pb) * sign;
-                const auto dBC = (pb - pc) * sign;
+                // B is strong smooth point
+                const auto& b = *context.points[dir].point;
 
-                pc.coords[y] = pb.coords[y] - sign * (dBC.coords[x] * dAB.coords[y]) / dAB.coords[x];
+                // C is the point for update
+                auto c = m_segments[segmentIndex].RPoints()[indexInSegment];
 
-                MovePointImpl<true, false>(ptToSmooth, pc);
+                /* dAB and dBC are the vectors from a to b and from b to c respectively.
+                 * The direction for those vetors determines my compile-time variable 'sign',
+                 * but it always looks to the point A
+                 */
+                const auto dAB = (a - b) * sign;
+                const auto dBC = (b - c) * sign;
+
+                c.coords[y] = b.coords[y] - sign * (dBC.coords[x] * dAB.coords[y]) / dAB.coords[x];
+
+                // Implicit recursive step
+                MovePointImpl<true, false>(ptToSmooth, c);
             }
         }
     }
