@@ -6,6 +6,8 @@
 
 #include "Ellipse.h"
 #include "Line.h"
+#include "Hyperbola.h"
+#include "Parabola.h"
 
 #include <cassert>
 
@@ -16,11 +18,10 @@ int main(int argc, char** argv)
 
     using T = double;
     constexpr const size_t dimensions = 2;
-    using LineFunction = Line<T, dimensions>;
-    using EllipseFunction = Ellipse<T, dimensions>;
 
     auto functionViewer = new FunctionEditor(100, &mainWindow);
 
+    using EllipseFunction = Ellipse<T, dimensions>;
     functionViewer->AddFunction(
         std::make_unique<EllipseFunction>(
             0.20, 0.10,
@@ -28,20 +29,30 @@ int main(int argc, char** argv)
             EllipseFunction::Vector({ 1.0 , 0.0 }),
             EllipseFunction::Vector({ 0.0 , 1.0 })));
 
-    functionViewer->AddFunction(
-        std::make_unique<EllipseFunction>(
-            0.20, 0.20,
-            EllipseFunction::Vector({ 0.25, 0.75 }),
-            EllipseFunction::Vector({ 1.0 , 0.0 }),
-            EllipseFunction::Vector({ 0.0 , 1.0 })));
+    //using HyperbolaFunction = Hyperbola<T, dimensions>;
+    //functionViewer->AddFunction(
+    //    std::make_unique<HyperbolaFunction>(
+    //        0.10, 0.10,
+    //        HyperbolaFunction::Vector({ 0.5, 0.5 }),
+    //        HyperbolaFunction::Vector({ 1.0 , 0.0 }),
+    //        HyperbolaFunction::Vector({ 0.0 , 1.0 })));
 
+    using LineFunction = Line<T, dimensions>;
     functionViewer->AddFunction(
         std::make_unique<LineFunction>(
             LineFunction::Vector({ 0.05, 0.05 }),
             LineFunction::Vector({ 0.45, 0.45 })));
 
+    using ParabolaFunction = Parabola<T, dimensions>;
+    functionViewer->AddFunction(
+        std::make_unique<ParabolaFunction>(
+            0.10,
+            ParabolaFunction::Vector({ 0.5, 0.5 }),
+            ParabolaFunction::Vector({ 1.0 , 0.0 }),
+            ParabolaFunction::Vector({ 0.0 , 1.0 })));
+
     mainWindow.setCentralWidget(functionViewer);
-    mainWindow.setFixedSize(500, 500);
+    mainWindow.setFixedSize(1000, 1000);
     mainWindow.show();
     return a.exec();
 

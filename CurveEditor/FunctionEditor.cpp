@@ -1,3 +1,4 @@
+#include <cassert>
 #include <QtGui/qevent.h>
 #include <QtGui/qpainter.h>
 #include "TunableParametricFunction.h"
@@ -80,6 +81,9 @@ void FunctionEditor::mousePressEvent(QMouseEvent* e)
     const QRect rect = contentsRect();
     const auto pos = e->localPos();
 
+    assert(m_d->pickedPoint == -1);
+    assert(m_d->pickedFunction == -1);
+
     const size_t fns = GetFunctionsCount();
     for(size_t i = 0; i < fns; ++i)
     {
@@ -99,7 +103,7 @@ void FunctionEditor::mousePressEvent(QMouseEvent* e)
                     constexpr const size_t pickTolPx = 10;
 
                     if(std::abs(point.x() - pos.x()) < pickTolPx &&
-                        std::abs(point.x() - pos.x()) < pickTolPx)
+                        std::abs(point.y() - pos.y()) < pickTolPx)
                     {
                         m_d->pickedFunction = i;
                         m_d->pickedPoint = j;

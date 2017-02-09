@@ -5,6 +5,7 @@ template<class T, size_t dimensions>
 class Vector
 {
 public:
+
     explicit Vector(const T(&_coords)[dimensions])
     {
         for(int i = 0; i < dimensions; ++i)
@@ -15,6 +16,28 @@ public:
 
     explicit Vector()
     {
+    }
+
+    Vector Cross(const Vector& v)
+    {
+
+    }
+
+    T DistanceTo(const Vector& p) const
+    {
+        return (*this - p).Length();
+    }
+
+    T Length() const
+    {
+        T result = 0;
+
+        for(int i = 0; i < dimensions; ++i)
+        {
+            result += coords[i] * coords[i];
+        }
+
+        return result;
     }
 
     Vector operator* (const T& val) const
@@ -95,19 +118,6 @@ public:
         }
 
         return result;
-    }
-
-    T DistanceTo(const Vector& p) const
-    {
-        T result = 0;
-
-        for(int i = 0; i < dimensions; ++i)
-        {
-            auto dt = coords[i] - p.coords[i];
-            result += dt * dt;
-        }
-
-        return std::sqrt(result);
     }
 
     T coords[dimensions];
