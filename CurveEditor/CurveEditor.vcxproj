@@ -186,10 +186,47 @@ xcopy $(SolutionDir)..\ThirdParty\platforms\*.* $(OutDir)platforms\  /s /d</Comm
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CurveEditor.cpp" />
+    <ClCompile Include="FunctionEditor.cpp" />
+    <ClCompile Include="FunctionViewer.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BezierCurve.h" />
+    <ClInclude Include="BSpline.h" />
+    <ClInclude Include="Ellipse.h" />
+    <CustomBuild Include="FunctionEditor.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QT_5_7_OpenGL_MSVC_140_64)\bin\moc.exe "%(FullPath)" -o "$(IntDir)moc/%(Filename).h"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QT_5_7_OpenGL_MSVC_140_64)\bin\moc.exe "%(FullPath)" -o "$(IntDir)moc/%(Filename).h"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(QT_5_7_OpenGL_MSVC_140_64)\bin\moc.exe "%(FullPath)" -o "$(IntDir)moc/%(Filename).h"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(QT_5_7_OpenGL_MSVC_140_64)\bin\moc.exe "%(FullPath)" -o "$(IntDir)moc/%(Filename).h"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compiling %(Filename)%(Extension) using MOC</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compiling %(Filename)%(Extension) using MOC</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling %(Filename)%(Extension) using MOC</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling %(Filename)%(Extension) using MOC</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)moc/%(Filename).h</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)moc/%(Filename).h</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)moc/%(Filename).h</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)moc/%(Filename).h</Outputs>
+    </CustomBuild>
+    <ClInclude Include="ParametricFunction.h" />
+    <ClInclude Include="Line.h" />
+    <ClInclude Include="TunableFunction.h" />
+    <ClInclude Include="TunableParametricFunction.h" />
+    <ClInclude Include="Vector.h" />
+    <CustomBuild Include="FunctionViewer.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QT_5_7_OpenGL_MSVC_140_64)\bin\moc.exe "%(FullPath)" -o "$(IntDir)moc/%(Filename).h"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QT_5_7_OpenGL_MSVC_140_64)\bin\moc.exe "%(FullPath)" -o "$(IntDir)moc/%(Filename).h"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(QT_5_7_OpenGL_MSVC_140_64)\bin\moc.exe "%(FullPath)" -o "$(IntDir)moc/%(Filename).h"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(QT_5_7_OpenGL_MSVC_140_64)\bin\moc.exe "%(FullPath)" -o "$(IntDir)moc/%(Filename).h"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compiling %(Filename)%(Extension) using MOC</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compiling %(Filename)%(Extension) using MOC</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling %(Filename)%(Extension) using MOC</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling %(Filename)%(Extension) using MOC</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)moc/%(Filename).h</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)moc/%(Filename).h</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)moc/%(Filename).h</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)moc/%(Filename).h</Outputs>
+    </CustomBuild>
     <CustomBuild Include="CurveEditor.h">
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QT_5_7_OpenGL_MSVC_140_64)\bin\moc.exe "%(FullPath)" -o "$(IntDir)moc/%(Filename).h"</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QT_5_7_OpenGL_MSVC_140_64)\bin\moc.exe "%(FullPath)" -o "$(IntDir)moc/%(Filename).h"</Command>
